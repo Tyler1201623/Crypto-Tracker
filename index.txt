@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptocurrency Price Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Cryptocurrency Price Tracker</h1>
+
+    <div id="price-container">
+        <div class="price-box">
+            <p id="btcPrice">Current Price: $0.00</p>
+            <canvas id="btcChart"></canvas>
+        </div>
+        <div class="price-box">
+            <p id="ethPrice">Current Price: $0.00</p>
+            <canvas id="ethChart"></canvas>
+        </div>
+        <div class="price-box">
+            <p id="dogePrice">Current Price: $0.00</p>
+            <canvas id="dogeChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const updatePrices = async () => {
+            const urls = {
+                bitcoin: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
+                ethereum: 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+                dogecoin: 'https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies=usd'
+            };
+
+            const formatPrice = (price) => {
+                return price.toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            };
+
+            const fetchPriceAndUpdateChart = async (crypto, chartId, priceId) => {
+                try {
+                    const response = await fetch(urls[crypto]);
+                    const data = await response.json();
+                    const price = data[crypto].usd;
+                    document.getElementById(priceId).textContent = `Current Price: ${formatPrice(price)}`;
+
+                    const chart = Chart.getChart(chartId); // Get the chart if it has been created
+                    if (chart) {
+                        chart.data.labels.push(new Date().toLocaleTimeString());
+                        chart.data.datasets.forEach((dataset) => {
+                            dataset.data.push(price);
+                        });
+                        chart.update();
+                    } else {
+                        const ctx = document.getElementById(chartId).getContext('2d');
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [new Date().toLocaleTimeString()],
+                                datasets: [{
+                                    label: `${crypto.charAt(0).toUpperCase() + crypto.slice(1)} Price (USD)`,
+                                    data: [price],
+                                    borderColor: 'rgb(75, 192, 192)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: false,
+                                        ticks: {
+                                            callback: function(value) {
+                                                return formatPrice(value); // Format y-axis ticks
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error fetching ${crypto} price:`, error);
+                }
+            };
+
+            fetchPriceAndUpdateChart('bitcoin', 'btcChart', 'btcPrice');
+            fetchPriceAndUpdateChart('ethereum', 'ethChart', 'ethPrice');
+            fetchPriceAndUpdateChart('dogecoin', 'dogeChart', 'dogePrice');
+        };
+
+        updatePrices();
+        setInterval(updatePrices, 10000); // Update every 10 seconds
+    </script>
+</body>
+</html>
