@@ -1,0 +1,3 @@
+[submodule "crypto-price-tracker"]
+	path = crypto-price-tracker
+	url = https://github.com/Tyler1201623/crypto-price-tracker.git
